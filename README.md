@@ -1,6 +1,9 @@
 # vuemastery-dl
 Vuemastery video downloader
 
+***Added the support of subtitles***
+
+
 ## Download an entire lesson
 * first `cd data/ANY_DIRRECTORY` like `cd data/advanced-components`
 * download a directory with `node ../../mirror.js`
