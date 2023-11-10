@@ -94,11 +94,11 @@ async function getVimeoPageByID(id, quality, appID) {
 }
 
 function findVideoUrl(str, quality) {
-    const regex = /(?:config = )(?:\{)(.*(\n.*?)*)(?:\"\})/gm;
+    const regex = /(?:playerConfig = )(?:\{)(.*(\n.*?)*)(?:\"}})/gm;
     let res = regex.exec(str);
     if (res !== null) {
         if (typeof res[0] !== "undefined") {
-            let config = res[0].replace('config = ', '');
+            let config = res[0].replace('playerConfig = ', '');
             config = JSON.parse(config);
             let progressive = config.request.files.progressive, videoURL;
             let textTracks = config.request.text_tracks.find(text => {
