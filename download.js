@@ -13,19 +13,24 @@ id = id.replace('https://player.vimeo.com/video/', '').replace('?', '').replace(
 
 // Default APP ID is 122963
 startDownloadByID(id, quality, 122963)
-
 async function startDownloadByID(vID, quality, appID) {
     try {
         let pageData = await getVimeoPageByID(vID, quality, appID)
         let videoURL = pageData.videoURL;
         let courseTitle = pageData.title || vID;
+        let textTracks = `https://player.vimeo.com${pageData.textTracks}`;
         let fileName = courseTitle.replace(/[^a-zA-Z0-9 ]/g, '-') + '.mp4';
-
+    	let fileNameVtt = courseTitle.replace(/[^a-zA-Z0-9 ]/g, '-') + '.vtt';
         if (videoURL !== null) {
             console.log(courseTitle + ', Downloading...');
-            await downloadFile(videoURL, fileName).then(function gotData(data) {
-                console.log(courseTitle + ', Download Complete.');
-            }, reason => {
+            await downloadFile(videoURL, fileName).then(async function gotData(data) {
+		        await downloadFile(textTracks, fileNameVtt).then(function gotData(data) {
+                        console.log(courseTitle + ', Download Complete subtitle.');
+                    }, reason => {
+                        console.log('Error, ' + reason);
+                    });
+                    console.log(courseTitle + ', Download Complete video.');
+                }, reason => {
                 console.log('Error, ' + reason);
             });
         } else
@@ -74,8 +79,10 @@ async function getVimeoPageByID(id, quality, appID) {
                     body += data;
                 });
                 res.on("end", () => {
+		        const {videoURL, textTracks} = findVideoUrl(body, quality);
                     resolve({
-                        videoURL: findVideoUrl(body, quality),
+                        videoURL,
+			            textTracks,
                         title: findTitle(body)
                     });
                 });
@@ -94,12 +101,15 @@ function findVideoUrl(str, quality) {
             let config = res[0].replace('config = ', '');
             config = JSON.parse(config);
             let progressive = config.request.files.progressive, videoURL;
+            let textTracks = config.request.text_tracks.find(text => {
+                return text.lang === "en";
+            });
             for (let item of progressive) {
                 videoURL = item.url;
                 if (quality + 'p' === item.quality)
                     break;
             }
-            return videoURL;
+            return {videoURL, textTracks: textTracks.url};
         }
     }
     return null;
